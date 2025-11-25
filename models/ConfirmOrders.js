@@ -16,12 +16,18 @@ const confirmOrderSchema = new Schema(
     },
     status: {
       type: String,
-
-      default: "pending",
+      default: "unconfirmed",
+      trim: true,
     },
     seen: {
       type: String,
       default: "unseen",
+      trim: true,
+    },
+    payType: {
+      type: String,
+      default: " ",
+      trim: true,
     },
   },
   { timestamps: true }

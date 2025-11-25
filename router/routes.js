@@ -6,6 +6,11 @@ const {
   CartUpdateController,
   confrimOrder,
   getConfirmOrderController,
+  getConfirmOrderByEmailController,
+  postCustomarInfo,
+  confirmOrder,
+  confirmOrderController,
+  DeleteAllCartController,
 } = require("../controllers/CartController");
 const {
   categoryGetController,
@@ -54,6 +59,7 @@ router.post("/cart", CartPostController);
 router.get("/cart/:email", CartGetController);
 router.delete("/cart/:id", CartDeleteController);
 router.put("/cart/:id", CartUpdateController);
-router.post("/confirm-order", confrimOrder);
-router.get("/confirm-order", getConfirmOrderController);
+router.post("/confirm-order", postCustomarInfo);
+router.get("/confirm-order/:email", getConfirmOrderByEmailController);
+router.put("/confirm-order/:email", confirmOrderController);
 module.exports = router;

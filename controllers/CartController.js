@@ -55,27 +55,61 @@ exports.CartUpdateController = async (req, res, next) => {
   } catch (error) {}
 };
 
+exports.postCustomarInfo = async (req, res) => {
+  const { data } = req.body;
 
-exports.confrimOrder =async (req,res)=> {
-  const {data} = req.body
-  console.log(data);
-  const cart = await Cart.find({email:data.email})
-  
+  const cart = await Cart.find({ email: data.email });
 
- try {
-  const result = new ConfirmOrder({email:data.email,address:data,orders:cart})
-   await result.save()
-   res.send(result)
-  
- } catch (error) {
- res.send(error)
-  
- }
+  try {
+    const result = new ConfirmOrder({
+      email: data.email,
+      address: data,
+      orders: cart,
+    });
+    await result.save();
+    res.send(result);
+  } catch (error) {
+    res.send(error);
+  }
+};
 
-  
-}
+// exports.getConfirmOrderController = async(req,res,next) => {
+//   const data =await ConfirmOrder.find()
+//   res.send(data)
+// }
+exports.getConfirmOrderByEmailController = async (req, res, next) => {
+  const email = req.params.email;
+  const data = await ConfirmOrder.find({ email: email });
 
-exports.getConfirmOrderController = async(req,res,next) => {
-  const data =await ConfirmOrder.find()
-  res.send(data)
+  res.send(data);
+};
+
+exports.confirmOrderController = async(req, res, next) => {
+  const email = req.params.email;
+  const data = req.body.items
+
+  console.log(email,data);
+  try {
+    const query = {email:email,status:"unconfirmed"}
+    const docs = {
+      $set:{status:data.status,payType:data.payment}
+    }
+    const result = await ConfirmOrder.findOneAndUpdate(query,docs,{new:true})
+      const delte = await Cart.deleteMany({email:email})
+      // console.log(delte);
+    // console.log(result);
+    res.send(result)
+
+    
+  } catch (error) {
+    
+    
+  }
+};
+
+
+exports.DeleteAllCartController = (req,res,next)=> {
+  const {id} = req.params.id
+  console.log(id);
+
 }
