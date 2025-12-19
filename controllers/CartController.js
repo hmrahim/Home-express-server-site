@@ -1,6 +1,8 @@
 const Cart = require("../models/Cart");
 const ConfirmOrder = require("../models/ConfirmOrders");
 const User = require("../models/User");
+const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 
 exports.CartPostController = async (req, res, next) => {
   const email = req.body.email;
@@ -60,7 +62,6 @@ exports.postCustomarInfo = async (req, res) => {
   const { info } = req.body;
 
   const cart = await Cart.find({ email: info.email });
-  
 
   try {
     const result = new ConfirmOrder({
@@ -69,7 +70,7 @@ exports.postCustomarInfo = async (req, res) => {
       orders: cart,
     });
     await result.save();
-   
+
     res.send(result);
   } catch (error) {
     res.send(error);
@@ -81,33 +82,24 @@ exports.postCustomarInfo = async (req, res) => {
 //   res.send(data)
 // }
 exports.getConfirmOrderController = async (req, res, next) => {
-  const data = await ConfirmOrder.find().sort({ _id: -1 })
+  const data = await ConfirmOrder.find().sort({ _id: -1 });
 
   res.send(data);
 
+  //   const result = await ConfirmOrder.aggregate([
+  //   {
+  //     $group: {
+  //       _id: {
+  //         $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+  //       },
+  //       items: { $push: "$$ROOT" }, // all documents of that date
+  //       count: { $sum: 1 }          // optional
+  //     }
+  //   },
+  //   { $sort: { _id: 1 } }            // sort by date
+  // ]);
 
-//   const result = await ConfirmOrder.aggregate([
-//   {
-//     $group: {
-//       _id: {
-//         $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
-//       },
-//       items: { $push: "$$ROOT" }, // all documents of that date
-//       count: { $sum: 1 }          // optional
-//     }
-//   },
-//   { $sort: { _id: 1 } }            // sort by date
-// ]);
-
-// res.send(result);
-
-
-
-
-
-
-
-
+  // res.send(result);
 };
 
 exports.getConfirmOrderByIdController = async (req, res, next) => {
@@ -174,13 +166,142 @@ exports.updateConfirmOrderStatus = async (req, res, next) => {
       new: true,
     });
 
-    if(result){
-      const updateRider = await User.findOneAndUpdate({email:data.rider},{$push:{orders:result._id}},{new:true})
+    const date = new Date(result.createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    const html = `<!DOCTYPE html>
+<html>
+  <body style="margin:0; padding:0; background-color:#f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4; padding:20px 0;">
+      <tr>
+        <td align="center">
+
+       
+          <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:6px; overflow:hidden; font-family:Arial, sans-serif;">
+
+           
+            <tr>
+              <td style="background-color:#0d6efd; padding:20px; text-align:center;">
+                <h1 style="color:#ffffff; margin:0; font-size:24px;">
+                HomeExpress
+                </h1>
+              </td>
+            </tr>
+
+           
+            <tr>
+              <td style="padding:25px; color:#333333;">
+                <h2 style="margin-top:0; font-size:20px;">
+                  Order Confirmed 🎉
+                </h2>
+
+                <p style="font-size:15px; line-height:22px;">
+                  Hi <strong>${result.address.name}</strong>,
+                </p>
+
+                <p style="font-size:15px; line-height:22px;">
+                  Thank you for your order! Your order has been successfully confirmed.
+                </p>
+
+               
+                <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:15px; border:1px solid #dddddd;">
+                  <tr>
+                    <td style="padding:10px; background-color:#f8f9fa; font-weight:bold;">
+                      Order ID
+                    </td>
+                    <td style="padding:10px;">
+                     ${result.orderNo}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px; background-color:#f8f9fa; font-weight:bold;">
+                      Order Date
+                    </td>
+                    <td style="padding:10px;">
+                      ${date}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:10px; background-color:#f8f9fa; font-weight:bold;">
+                      Total Amount
+                    </td>
+                    <td style="padding:10px;">
+                      ${result.totalAmount}
+                    </td>
+                  </tr>
+                </table>
+
+              
+                <table cellpadding="0" cellspacing="0" style="margin:25px auto;">
+                  <tr>
+                    <td align="center" style="background-color:#0d6efd; padding:12px 25px; border-radius:4px;">
+                      <a href="http://homeexpress-sa.web.app/dashboard/my-orders" style="color:#ffffff; text-decoration:none; font-size:15px; font-weight:bold;">
+                        Track Your Order
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="font-size:14px; color:#666666; line-height:20px;">
+                  We’ll notify you once your order is shipped.
+                </p>
+              </td>
+            </tr>
+
+           
+            <tr>
+              <td style="background-color:#f1f1f1; padding:15px; text-align:center; font-size:12px; color:#777777;">
+                © 2025 HomeExpress. All rights reserved.
+                <br />
+                Need help? Contact us at 
+                <a href="mailto:admin@homeexpres.com" style="color:#0d6efd; text-decoration:none;">
+                  support@homeexpress.com
+                </a>
+              </td>
+            </tr>
+
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+`;
+
+    if (result) {
+      const updateRider = await User.findOneAndUpdate(
+        { email: data.rider },
+        { $push: { orders: result._id } },
+        { new: true }
+      );
+
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: "hmrahimdb@gmail.com",
+          pass: "lnrnqbbnahwfmyvb ",
+        },
+      });
+      const mailOptions = {
+        from: `"HomeExpres" <hmrahimdb@gmail.com>`,
+        to: result.email,
+        subject: `Order Confirmed! #${result.orderNo}`,
+        html: html,
+      };
+      const send = await transporter.sendMail(mailOptions);
     }
 
-    
     res.send(result);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 exports.DeleteAllCartController = (req, res, next) => {
@@ -189,7 +310,10 @@ exports.DeleteAllCartController = (req, res, next) => {
 
 exports.getConfirmOrderByEmailController = async (req, res, next) => {
   const email = req.params.email;
-  const order = await ConfirmOrder.find({ email: email, status:{$in:["pending","confirmed","delivered"]} });
+  const order = await ConfirmOrder.find({
+    email: email,
+    status: { $in: ["pending", "confirmed", "delivered"] },
+  });
   res.send(order);
 };
 exports.geAlltConfirmOrderByEmailController = async (req, res, next) => {
