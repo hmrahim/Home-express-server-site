@@ -38,20 +38,40 @@ exports.productPutController = async (req, res, next) => {
   const id = req.params.id;
   const product = req.body;
   try {
-    const query = {_id:id}
+    const query = { _id: id };
     const docs = {
       $set: product,
     };
-    const result = await Product.findOneAndUpdate(query,docs,{new:true})
+    const result = await Product.findOneAndUpdate(query, docs, { new: true });
     console.log(result);
-    res.send(result)
-
+    res.send(result);
   } catch (error) {}
 };
-exports.productDeleteController = async(req, res, next) => {
-  const id = req.params.id
-  const result = await Product.findOneAndDelete({_id:id})
-  res.send(result)
+exports.productDeleteController = async (req, res, next) => {
+  const id = req.params.id;
+  const result = await Product.findOneAndDelete({ _id: id });
+  res.send(result);
 
   console.log(result);
+};
+
+exports.productSeacrhController = async (req, res, next) => {
+  const text = req.query.text;
+  const data = await Product.find({
+    $or: [
+      { name: { $regex: text, $options: "i" } },
+      { price: { $regex: text, $options: "i" } },
+      { category: { $regex: text, $options: "i" } },
+      { brand: { $regex: text, $options: "i" } },
+      { image: { $regex: text, $options: "i" } },
+      { discount: { $regex: text, $options: "i" } },
+      { desc: { $regex: text, $options: "i" } },
+      { country: { $regex: text, $options: "i" } },
+      
+    ],
+  });
+
+  
+  res.send(data);
+
 };

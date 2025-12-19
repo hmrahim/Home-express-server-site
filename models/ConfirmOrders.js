@@ -11,8 +11,8 @@ const confirmOrderSchema = new Schema(
       default: [],
     },
     address: {
-      type: Array,
-      default: [],
+      type: Object,
+      default: {},
     },
     status: {
       type: String,
@@ -29,6 +29,16 @@ const confirmOrderSchema = new Schema(
       default: " ",
       trim: true,
     },
+    orderNo: {
+      type: String,
+      trim:true
+    },
+    totalAmount: {
+      type: String,
+      trim:true,
+      default:" "
+    },
+   
   },
   { timestamps: true }
 );
